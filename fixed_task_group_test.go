@@ -33,7 +33,6 @@ func TestFixedTaskGroup_TasksCalled(t *testing.T) {
 	tg := NewFixedTaskGroup(task, task)
 	require.NotNil(t, tg)
 
-	<-tg.DoneC()
 	require.NoError(t, <-tg.ErrC()) // Should not block, should produce nil.
 	require.Equal(t, int64(2), atomic.LoadInt64(&tasksCalled))
 }
@@ -60,7 +59,6 @@ func TestFixedTaskGroup_ErrorPropagation(t *testing.T) {
 	}
 
 	require.NoError(t, <-tg.ErrC())
-	<-tg.DoneC()
 }
 
 func TestFixedTaskGroup_Cancel(t *testing.T) {
@@ -83,7 +81,6 @@ func TestFixedTaskGroup_Cancel(t *testing.T) {
 		tg.Cancel() // This should be fine
 	})
 
-	<-tg.DoneC()
 	require.NoError(t, <-tg.ErrC())
 	require.Equal(t, int64(1), atomic.LoadInt64(&cancelled))
 }
@@ -120,17 +117,9 @@ func ExampleFixedTaskGroup() {
 		},
 	)
 
-	for done := false; !done; {
-		select {
-		case err, ok := <-tg.ErrC():
-			if ok {
-				fmt.Printf("Error: %s\n", err)
-				// Cancel the task group if any task produces an error.
-				tg.Cancel()
-			}
-		case <-tg.DoneC():
-			fmt.Printf("All tasks complete\n")
-			done = true
-		}
+	for err := range tg.ErrC() {
+		fmt.Printf("Error: %s\n", err)
+		// Cancel the task group if any task produces an error.
+		tg.Cancel()
 	}
 }

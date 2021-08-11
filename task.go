@@ -14,6 +14,14 @@
 
 package go_tasks
 
+import "errors"
+
+// ErrTaskCancelled indicates a task was cancelled.
+//
+// Tasks that wish to explicitly indicate they were cancelled rather than completing normally may return this error
+// value as a sentinel value.
+var ErrTaskCancelled = errors.New("task cancelled")
+
 // Task represents an independent worker.
 //
 // Tasks should respect requests for cancellation which is indicated by cancelC becoming readable. Additionally, tasks
